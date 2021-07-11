@@ -1,102 +1,46 @@
 /*
  * Copyright (c) 2020 Mark Crowe <https://github.com/markcrowe-com>. All rights reserved.
  */
+package com.markcrowe.proportionalrepresentationvoting;
 
-import java.util.*;
-import java.lang.*;
+import java.util.List;
 
 public class Constituency
 {
-	private String name;
-	private int seats;
-	private int quota;
-	private int votes;
-	private Candidate[] candidates;
-	private Ballot[] ballots;
-/*	Methods
-	//Constructor
-	public Constituency(String name, int seats, ArrayList candidates, ArrayList ballots)
-	//Common Constructor Operations
-	private void calculateQuota()
-	//Obsevers
-	public String getName()
-	public int quota()
-	//Output
-	public String toString()
-	//Operations
-	public int turnOut()
-	public int getPartyResults(String party)
-	public void election()
-	//Private Operations for public void election()
-	private void startElection()
-	private void redistributeAll(int id)
-	private void redistributeSurplus(int id)
-	private void redistributeVote(int id, int index)
-	private int min()
-*/	// Constructor
-	public Constituency(String name, int seats, ArrayList candidates, ArrayList ballots)
+	public Constituency(String name, int seats, List<Candidate> candidates, List<Ballot> ballots)
 	{
 		this.name = name;
 		this.seats = seats;
 		this.votes = 1000;
 		this.candidates = new Candidate[candidates.size()];
-		for(int i = 0; i < this.candidates.length; i++)
+		for(int index = 0; index < this.candidates.length; index++)
 		{
-			this.candidates[i] = (Candidate) candidates.get(i);
+			this.candidates[index] = candidates.get(index);
 		}
 		this.ballots = new Ballot[ballots.size()];
-		for(int i = 0; i < this.ballots.length; i++)
+		for(int index = 0; index < this.ballots.length; index++)
 		{
-			this.ballots[i] = (Ballot) ballots.get(i);
+			this.ballots[index] = ballots.get(index);
 		}
-		calculateQuota();
-	}
-	//Common Constructor Operations
-	private void calculateQuota()
-	{
-		float temp = (float) ((ballots.length/(seats + 1)) + 1);
-		quota = (int) Math.round(temp);
+
+		quota = calculateQuota(this.ballots.length, seats);
 	}
 	//Obsevers
-	public String getName()	{return this.name;}
-	public int quota()	{return quota;}
-	//Output
-	public String toString()
+	public String getName()
 	{
-		String temp = new String();
-		temp =  name + "\n";
-		temp += "TurnOut => " + turnOut() + "\t";
-		temp += "Total Votes => " + ballots.length + "\n";
-		temp += "Quota => " + quota + "\t";
-		temp += "Seats => " + seats + "\t";
-		temp += "Candidates => " + candidates.length + "\n\n";
-		temp += "Name" + "\t\t\t" + "Party" + "\t" + "Total" + "\t" + "1st" + "\t" + "Status" + "\t\t" + "Count" +"\n";
-		for(int i = 0; i < candidates.length; i++)
-		{
-			temp += candidates[i] + "\n";
-		}
-		return temp;
+		return name;
 	}
-	//Operations
-	public float turnOut()
+	public int getQuota()
 	{
-		return (((float)(ballots.length)/ (float)votes) * 100);
-		
+		return quota;
 	}
-
-	public int getPartyResults(String party)
+	public float getTurnOut()
 	{
-		int sum = 0;
-		for(int i = 0; i < candidates.length; i++)
-		{
-			if(candidates[i].party().compareToIgnoreCase(party) == 0)
-			{
-				sum++;
-			}
-		}
-		return sum;
+		return (ballots.length / (float) votes) * 100;
 	}
-
+	//
+	//	Public Methods
+	//
 	public void election()
 	{
 		int seats_left = seats;
@@ -110,15 +54,15 @@ public class Constituency
 			some = false;
 			for(int i = 0; i < candidates.length; i++)
 			{
-				if((candidates[i].getTotal() >= quota  || seats_left == candidates_left) && !candidates[i].finished())
+				if((candidates[i].getTotal() >= quota || seats_left == candidates_left) && !candidates[i].isFinished())
 				{
-					candidates[i].isElected(round);
+					candidates[i].setElected(round);
 					this.redistributeSurplus(i);
 					seats_left -= 1;
 					candidates_left -= 1;
 					some = true;
 				}
-			}		
+			}
 			if(some == false)
 			{
 				int small = min();
@@ -128,63 +72,99 @@ public class Constituency
 			}
 		}
 		// deal with Candidates not elected
-		for(int c = 0; c < candidates.length; c++)
+		for(Candidate candidate : candidates)
 		{
-			if(!(candidates[c].finished()))
+			if(!(candidate.isFinished()))
 			{
-				candidates[c].isExcluded(round);
+				candidate.isExcluded(round);
 			}
 		}
 	}
-	//Private Operations for public void election()
-	private void startElection()
+	public int getPartySeatCount(String party)
 	{
-		int round = 1;
-		for(int i = 0; i < ballots.length; i++)
+		int count = 0;
+		for(Candidate candidate : candidates)
 		{
-			int preference = ballots[i].getPreference(round);
-			for(int j = 0; j < candidates.length; j++)
+			if(candidate.getParty().compareToIgnoreCase(party) == 0)
+				count++;
+		}
+		return count;
+	}
+	@Override
+	public String toString()
+	{
+		var text = name + "\n"
+				+ "TurnOut => " + String.format("%.2f", getTurnOut()) + "%\t"
+				+ "Total Votes => " + ballots.length + "\n"
+				+ "Quota => " + quota + "\t"
+				+ "Seats => " + seats + "\t"
+				+ "Candidates => " + candidates.length + "\n\n"
+				+ "Name" + "\t\t\t" + "Party" + "\t" + "Total" + "\t" + "1st" + "\t" + "Status" + "\t\t" + "Count" + "\n";
+		for(Candidate candidate : candidates)
+		{
+			text += candidate + "\n";
+		}
+		return text;
+	}
+	//
+	//	Public Static Methods
+	//
+	public static int calculateQuota(int numberOfBallots, int numberOfSeats)
+	{
+		return Math.round(((float) numberOfBallots / (numberOfSeats + 1)) + 1);
+	}
+	//
+	//	Private Methods
+	//
+	private int min()
+	{
+		int min = 0;
+		boolean done = false;
+		for(int index = 0; index < candidates.length && !done; index++)
+		{
+			if(!candidates[index].isFinished())
 			{
-				if(preference == candidates[j].getId())
-				{
-					candidates[j].addVote(ballots[i]);
-				}
+				min = index;
+				done = true;
 			}
 		}
+		for(int index = 0; index < candidates.length; index++)
+		{
+			if((candidates[min].getTotal() > candidates[index].getTotal()) && !candidates[index].isFinished())
+				min = index;
+		}
+		return min;
 	}
-
 	private void redistributeAll(int id)
 	{
-		for(int i = 0; i < candidates[id].getTotal(); i++)
+		for(int index = 0; index < candidates[id].getTotal(); index++)
 		{
-			redistributeVote(id, i);
+			redistributeVote(id, index);
 		}
 	}
-
 	private void redistributeSurplus(int id)
 	{
-		int transferr = candidates[id].getTotal() - quota();
-		for(int i = 0; i < transferr; i++)
+		int transferr = candidates[id].getTotal() - getQuota();
+		for(int index = 0; index < transferr; index++)
 		{
-			redistributeVote(id, i);
+			redistributeVote(id, index);
 		}
 	}
-
 	private void redistributeVote(int id, int index)
 	{
-		boolean getting_preferences = true;
-		while(getting_preferences)
+		boolean gettingPreferences = true;
+		while(gettingPreferences)
 		{
-			getting_preferences = false;
-			int recieving_candidate = candidates[id].getNextPreference(index);
+			gettingPreferences = false;
+			int recievingCandidate = candidates[id].getNextPreference(index);
 			boolean done = false;
 			for(int i = 0; i < candidates.length && !done; i++)
 			{
-				if(recieving_candidate == candidates[i].getId())
+				if(recievingCandidate == candidates[i].getId())
 				{
-					if(candidates[i].finished())
+					if(candidates[i].isFinished())
 					{
-						getting_preferences = true;
+						gettingPreferences = true;
 					}
 					else
 					{
@@ -193,28 +173,28 @@ public class Constituency
 					}
 				}
 			}
-		}// end while
+		}
 	}
-
-	private int min()
+	private void startElection()
 	{
-		int min = 0;
-		boolean done = false;
-		for(int i = 0; i < candidates.length && !done; i++)
+		int round = 1;
+		for(Ballot ballot : ballots)
 		{
-			if(!candidates[i].finished())
+			int preference = ballot.getPreference(round);
+			for(Candidate candidate : candidates)
 			{
-				min = i;
-				done = true;
+				if(preference == candidate.getId())
+					candidate.addVote(ballot);
 			}
 		}
-		for(int i = 0; i < candidates.length; i++)
-		{
-			if((candidates[min].getTotal() > candidates[i].getTotal()) && !candidates[i].finished())
-			{
-				min = i;
-			}
-		}
-		return min;
 	}
+	//
+	//	fields
+	//
+	private final String name;
+	private final int seats;
+	private final int quota;
+	private final int votes;
+	private final Candidate[] candidates;
+	private final Ballot[] ballots;
 }
