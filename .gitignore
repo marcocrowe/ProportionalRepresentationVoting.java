@@ -1,6 +1,8 @@
+/.vs/
 */target/
 */.settings/
 .project
 .classpath
 
 votes.dat
+nbactions.xml
