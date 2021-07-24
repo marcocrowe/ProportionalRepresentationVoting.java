@@ -3,6 +3,7 @@
  */
 package com.markcrowe.proportionalrepresentationvoting.windows;
 
+import com.markcrowe.proportionalrepresentationvoting.ElectionFileParser;
 import com.markcrowe.proportionalrepresentationvoting.TestFile;
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -16,9 +17,7 @@ public class ElectionFrame extends javax.swing.JFrame
 	{
 		initComponents();
 	}
-	//
-	//	Private Methods
-	//
+	/* Private Methods */
 	private void about()
 	{
 		JOptionPane.showMessageDialog(this, "Election Processing System v1.1 \nCopyright (c) 2020 Mark Crowe \nhttps://github.com/markcrowe-com", "Election Processing System", JOptionPane.INFORMATION_MESSAGE);
@@ -43,7 +42,7 @@ public class ElectionFrame extends javax.swing.JFrame
 		{
 			try( BufferedReader reader = new BufferedReader(new FileReader(fileChooser.getSelectedFile().getPath())))
 			{
-				electionInternalFrame = new ElectionInternalFrame(TestFile.parseFile(reader));
+				electionInternalFrame = new ElectionInternalFrame(ElectionFileParser.parseFile(reader));
 				electionInternalFrame.loadResults();
 
 				desktopPane.add(electionInternalFrame);

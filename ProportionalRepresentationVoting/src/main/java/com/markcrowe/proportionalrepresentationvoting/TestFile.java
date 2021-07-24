@@ -9,15 +9,6 @@ import javax.swing.*;
 
 public class TestFile
 {
-	private int next;
-
-	private final int ballots_min = 200;
-	private final int ballots_max = 1000 - ballots_min;
-	private final int candidates_min = 2;
-	private final int candidates_max = 15 - candidates_min;
-	private final int seats_min = 2;
-	private final int seats_max = 8 - seats_min;
-
 	public TestFile(String myfile)
 	{
 		try
@@ -34,30 +25,27 @@ public class TestFile
 	}
 	private void buildTestFile(String myfile) throws IOException
 	{
-		try(PrintWriter printWriter = new PrintWriter(new FileWriter(myfile)))
+		try( PrintWriter printWriter = new PrintWriter(new FileWriter(myfile)))
 		{
 			next = 0;
 			buildFile(printWriter);
 			check(printWriter);
 		}
 	}
-
 	//Output
 	private void info(String title, String message)
 	{
 		JOptionPane.showMessageDialog(null, message, title, JOptionPane.INFORMATION_MESSAGE);
 	}
-
 	private void buildFile(PrintWriter printWriter)
 	{
 		printWriter.println("<ELECTION>");
 		printWriter.println("<CONS>");
 		for(int index = 0; index < constituencies.length; index++)
-		{
 			printWriter.println((index + 1) + " " + constituencies[index]);
-		}
+
 		printWriter.println("</CONS>");
-		for(int index = 0; index < constituencies.length; index++)
+		for(String constituency : constituencies)
 		{
 			int seats = seats_min + (int) (Math.random() * (seats_max + 1));
 			int candidatesCount = 0;
@@ -65,8 +53,9 @@ public class TestFile
 			{
 				candidatesCount = candidates_min + (int) (Math.random() * (candidates_max + 1));
 			}
+
 			int ballots = ballots_min + (int) (Math.random() * (ballots_max + 1));
-			generateConstituency(printWriter, constituencies[index], seats, candidatesCount, ballots);
+			generateConstituency(printWriter, constituency, seats, candidatesCount, ballots);
 		}
 		printWriter.println("</ELECTION>");
 	}
@@ -83,17 +72,13 @@ public class TestFile
 		printWriter.println("</NUMOFSEATS>");
 		//Candidates
 		printWriter.println("<CAND>");
-		for(int i = 0; i < candidates; i++)
-		{
-			printWriter.println((i + 1) + " " + nextCandidate());
-		}
+		for(int index = 0; index < candidates; index++)
+			printWriter.println((index + 1) + " " + nextCandidate());
 		printWriter.println("</CAND>");
 
 		printWriter.println("<BALLOTS>");
 		for(int index = 0; index < ballots; index++)
-		{
 			printWriter.println(buildBallot(candidates));
-		}
 		printWriter.println("</BALLOTS>");
 		printWriter.println("</ELEC>");
 		printWriter.println("");
@@ -101,9 +86,8 @@ public class TestFile
 	private String nextCandidate()
 	{
 		next++;
-		return candidates[next - 1] + ", " + this.randomParty();
+		return candidates[next - 1] + ", " + randomParty();
 	}
-
 	private String buildBallot(int candidateCount)
 	{
 		ArrayList<Integer> arrayList = new ArrayList<>();
@@ -115,9 +99,8 @@ public class TestFile
 
 		int[] votes = new int[candidateCount];
 		for(int index = 0; index < candidateCount; index++)
-		{
 			votes[index] = arrayList.get(index);
-		}
+
 		Ballot ballot = new Ballot(candidateCount, votes);
 		return ballot.toString();
 	}
@@ -135,89 +118,15 @@ public class TestFile
 			info("File I/O Error", message);
 		}
 	}
-
-	public static Constituency[] parseFile(BufferedReader reader) throws IOException
-	{
-		Constituency[] constituencies = null;
-		String line;
-		int constituencyNumber = 0;
-		while((line = reader.readLine()) != null)
-		{
-			if(line.compareToIgnoreCase("<CONS>") == 0)
-			{
-				line = reader.readLine();
-				int constituencyCount = 0;
-				while(line.compareToIgnoreCase("</CONS>") != 0)
-				{
-					constituencyCount = constituencyCount + 1;
-					line = reader.readLine();
-				}
-				constituencies = new Constituency[constituencyCount];
-			}
-			if(line.compareToIgnoreCase("<ELEC>") == 0)
-			{
-				line = reader.readLine();
-				String name = "";
-				int seats = 0;
-				ArrayList<Candidate> cand = new ArrayList<>();
-				ArrayList<Ballot> ballots = new ArrayList<>();
-				while(line.compareToIgnoreCase("</ELEC>") != 0)
-				{
-					if(line.compareToIgnoreCase("<ENAME>") == 0)
-						name = reader.readLine();
-					if(line.compareToIgnoreCase("<NUMOFSEATS>") == 0)
-						seats = Integer.parseInt(reader.readLine());
-					if(line.compareToIgnoreCase("<CAND>") == 0)
-						parseCandidates(reader, cand);
-					if(line.compareToIgnoreCase("<BALLOTS>") == 0)
-						parseBallots(reader, ballots);
-					line = reader.readLine();
-				}
-				constituencies[constituencyNumber] = new Constituency(name, seats, cand, ballots);
-				constituencyNumber++;
-			}
-		}
-		return constituencies;
-	}
-	private static Ballot parseBallot(String preferences)
-	{
-		return new Ballot(preferences.split(", "));
-	}
-	private static void parseBallots(BufferedReader reader, List<Ballot> ballotList) throws IOException
-	{
-		String line = reader.readLine();
-		while(!(line.compareToIgnoreCase("</BALLOTS>") == 0))
-		{
-			ballotList.add(parseBallot(line));
-			line = reader.readLine();
-		}
-	}
-	private static Candidate parseCandidate(String details)
-	{
-		String[] detail = details.split(", ");
-		String[] temp = detail[0].split(" ");
-		int id = Integer.parseInt(temp[0]);
-		if(temp.length > 2)
-		{
-			for(int i = 2; i < temp.length; i++)
-			{
-				temp[1] += (" " + temp[i]);
-			}
-		}
-		return new Candidate(id, detail[1], temp[1], detail[2]);
-	}
-	private static void parseCandidates(BufferedReader reader, List<Candidate> candidateList) throws IOException
-	{
-		String line = reader.readLine();
-		while(!(line.compareToIgnoreCase("</CAND>") == 0))
-		{
-			candidateList.add(parseCandidate(line));
-			line = reader.readLine();
-		}
-	}
-	//
-	//	fields
-	//
+	/* Fields */
+	private int next;
+	private final int ballots_min = 200;
+	private final int ballots_max = 1000 - ballots_min;
+	private final int candidates_min = 2;
+	private final int candidates_max = 15 - candidates_min;
+	private final int seats_min = 2;
+	private final int seats_max = 8 - seats_min;
+	/* Fields */
 	private final String[] candidates =
 	{
 		"Murchison, Ahmed",
@@ -430,10 +339,10 @@ public class TestFile
 		"Limerick West",
 		"Tipperary North",
 		"Tipperary South",
-		"Waterford"
+		"Waterford",
 	};
 	private final String[] parties =
 	{
-		"FF", "FG", "Lab", "PD", "GP", "SF", "Ind"
+		"FF", "FG", "Lab", "PD", "GP", "SF", "Ind",
 	};
 }

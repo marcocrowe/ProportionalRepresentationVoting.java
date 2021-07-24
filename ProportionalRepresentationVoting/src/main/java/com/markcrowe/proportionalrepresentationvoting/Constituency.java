@@ -101,9 +101,7 @@ public class Constituency
 				+ "Candidates => " + candidates.length + "\n\n"
 				+ "Name" + "\t\t\t" + "Party" + "\t" + "Total" + "\t" + "1st" + "\t" + "Status" + "\t\t" + "Count" + "\n";
 		for(Candidate candidate : candidates)
-		{
 			text += candidate + "\n";
-		}
 		return text;
 	}
 	//

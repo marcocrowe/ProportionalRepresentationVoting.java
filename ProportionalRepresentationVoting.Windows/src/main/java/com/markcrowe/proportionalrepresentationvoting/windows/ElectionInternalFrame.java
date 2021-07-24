@@ -39,9 +39,7 @@ public class ElectionInternalFrame extends javax.swing.JInternalFrame
 	private void initializeConstituencyComboBox()
 	{
 		for(Constituency constituency : election.getConstituencies())
-		{
 			constituencyComboBox.addItem(constituency.getName());
-		}
 	}
 	//
 	//	fields
